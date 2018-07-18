@@ -11,19 +11,18 @@ items = [
 class Item(Resource):
 
     def get(self, name):
-        for item in items:
-            if item['name'] == name:
-                print("name: " + name)
-                return {'item': item}, 200
+        item = next(filter(lambda i: i['name'] == name, items), 'None')
 
-        return {'message': 'item not found.'}, 404
+        return {'message': item}, 200 if item is not None else 404
 
     def post(self, name):
         
-        for item in items:
-            if item['name'] == name:
-                print(name + ' already exists.')
-                return {'message': 'It already exists.'}, 401
+        # for item in items:
+        #     if item['name'] == name:
+        #         print(name + ' already exists.')
+        #         return {'message': 'It already exists.'}, 400
+        if next(filter(lambda x: x['name'] == name, items), None) is not None:
+            return {'message': "An item with name '{}' already exists.".format(name)}, 400
 
         data = request.get_json(silent=True)
         new_item = {'name': name, 'price': data['price']}
