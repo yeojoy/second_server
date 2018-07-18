@@ -1,20 +1,26 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
+from flask_jwt import JWT, jwt_required
+from security import authenticate, identity
 
 app = Flask(__name__)
+app.secret_key = 'yeojoy'
 api = Api(app)
+
+jwt = JWT(app, authenticate, identity) # endpoint is /auth
 
 items = [
     {'name': 'good stub', 'price': 13.99}
 ]
 
 class Item(Resource):
-
+    @jwt_required()
     def get(self, name):
         item = next(filter(lambda i: i['name'] == name, items), 'None')
 
         return {'message': item}, 200 if item is not None else 404
 
+    @jwt_required()
     def post(self, name):
         
         # for item in items:
@@ -29,25 +35,44 @@ class Item(Resource):
         items.append(new_item)
         return new_item, 201
 
-    def patch(self, name):
-        data = request.get_json(silent=True)
-        for item in items:
-            if item['name'] == name:
-                if item['price'] == data['price']:
-                    return {'message': 'prices are same.'}, 202
-                else:
-                    item['price'] = data['price']
-                    return {'message': 'updating is success.'}, 200
-                
-        return {'message': 'item not found'}, 404
+    @jwt_required()
+    def put(self, name):
+        #data = request.get_json(silent=True)
 
+        #for item in items:
+        #    if item['name'] == name:
+        #        if item['price'] == data['price']:
+        #            return {'message': 'prices are same.'}, 202
+        #        else:
+        #            item['price'] = data['price']
+        #            return {'message': 'updating is success.'}, 200
+        #        
+        #return {'message': 'item not found'}, 404
+        data = request.get_json()
+        item = next(filter(lambda x: x['name'] == name, items), None)
+        if item is None:
+            item = {'name': name, 'price': data['price']}
+            items.append(item)
+        else:
+            item.update(data)
+
+        return item
+
+
+
+    @jwt_required()
     def delete(self, name):
-        for item in items:
-            if item['name'] == name:
-                items.remove(item)
-                return {'message': 'success'}, 200
+        # for item in items:
+        #     if item['name'] == name:
+        #         items.remove(item)
+        #         return {'message': 'success'}, 200
+        # 
+        # return {'message': 'item not found'}, 404
         
-        return {'message': 'item not found'}, 404
+        global items # python thinks items is local variable. so add "global" keyword
+        items = list(filter(lambda x: x['name'] != name, items))
+        return {'message': 'success to delete item.'}, 200
+
 
 class ItemList(Resource):
     def get(self):
