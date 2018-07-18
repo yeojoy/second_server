@@ -1,10 +1,11 @@
 from flask import Flask, request
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, reqparse
 from flask_jwt import JWT, jwt_required
+
 from security import authenticate, identity
 
 app = Flask(__name__)
-app.secret_key = 'yeojoy'
+app.secret_key = 'jose'
 api = Api(app)
 
 jwt = JWT(app, authenticate, identity) # endpoint is /auth
@@ -48,7 +49,16 @@ class Item(Resource):
         #            return {'message': 'updating is success.'}, 200
         #        
         #return {'message': 'item not found'}, 404
-        data = request.get_json()
+
+        parser = reqparse.RequestParser()
+        # when bad request like mismatching type or blank, resolve this problem.
+        parser.add_argument('price',
+            type = float,
+            required = True,
+            help = "This field cannot be left blank!"
+        )
+
+        data = parser.parse_args() # request.get_json()
         item = next(filter(lambda x: x['name'] == name, items), None)
         if item is None:
             item = {'name': name, 'price': data['price']}
