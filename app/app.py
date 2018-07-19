@@ -15,6 +15,15 @@ items = [
 ]
 
 class Item(Resource):
+
+    parser = reqparse.RequestParser()
+    # when bad request like mismatching type or blank, resolve this problem.
+    parser.add_argument('price',
+        type = float,
+        required = True,
+        help = "This field cannot be left blank!"
+    )
+
     @jwt_required()
     def get(self, name):
         item = next(filter(lambda i: i['name'] == name, items), 'None')
@@ -31,7 +40,7 @@ class Item(Resource):
         if next(filter(lambda x: x['name'] == name, items), None) is not None:
             return {'message': "An item with name '{}' already exists.".format(name)}, 400
 
-        data = request.get_json(silent=True)
+        data = Item.parser.parse_args()
         new_item = {'name': name, 'price': data['price']}
         items.append(new_item)
         return new_item, 201
@@ -50,15 +59,7 @@ class Item(Resource):
         #        
         #return {'message': 'item not found'}, 404
 
-        parser = reqparse.RequestParser()
-        # when bad request like mismatching type or blank, resolve this problem.
-        parser.add_argument('price',
-            type = float,
-            required = True,
-            help = "This field cannot be left blank!"
-        )
-
-        data = parser.parse_args() # request.get_json()
+        data = Item.parser.parse_args()
         item = next(filter(lambda x: x['name'] == name, items), None)
         if item is None:
             item = {'name': name, 'price': data['price']}
