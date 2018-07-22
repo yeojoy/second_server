@@ -16,6 +16,14 @@ class Item(Resource):
     def get(self, name):
         # item = next(filter(lambda i: i['name'] == name, items), 'None')
         # return {'message': item}, 200 if item is not None else 404
+        item = self.find_by_name(name)
+        if item:
+            return item
+        
+        return {"message": "item not found."}, 404
+
+    @classmethod
+    def find_by_name(cls, name):
         connection = sqlite3.connect('my_app.db')
         cursor = connection.cursor()
 
@@ -27,8 +35,6 @@ class Item(Resource):
 
         if row:
             return {"item": {"name": row[0], "price": row[1]}}
-        
-        return {"message": "item not found."}, 404
 
     @jwt_required()
     def post(self, name):
@@ -37,12 +43,23 @@ class Item(Resource):
         #     if item['name'] == name:
         #         print(name + ' already exists.')
         #         return {'message': 'It already exists.'}, 400
-        if next(filter(lambda x: x['name'] == name, items), None) is not None:
+        # if next(filter(lambda x: x['name'] == name, items), None) is not None:
+        #     return {'message': "An item with name '{}' already exists.".format(name)}, 400
+        if self.find_by_name(name):
             return {'message': "An item with name '{}' already exists.".format(name)}, 400
 
         data = Item.parser.parse_args()
         new_item = {'name': name, 'price': data['price']}
-        items.append(new_item)
+        # items.append(new_item)
+
+        connection = sqlite3.connect("my_app.db")
+        cursor = connection.cursor()
+
+        query = "INSERT INTO items VALUES (?, ?)"
+        cursor.execute(query, (new_item['name'], new_item['price'], ))
+        connection.commit()
+        connection.close()
+
         return new_item, 201
 
     @jwt_required()

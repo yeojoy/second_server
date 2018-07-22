@@ -16,4 +16,5 @@ api.add_resource(Item, '/item/<string:name>') # http://127.0.0.1/5000/item/yeojo
 api.add_resource(ItemList, '/items')
 api.add_resource(UserRegister, '/register')
 
-app.run(host='0.0.0.0', port=5000, debug=True)
+if __name__ == '__main__': # if launch with python, this is the main!
+    app.run(host='0.0.0.0', port=5000, debug=True)
