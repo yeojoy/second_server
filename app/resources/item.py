@@ -1,6 +1,7 @@
 import sqlite3
 from flask_restful import reqparse, Resource
 from flask_jwt import jwt_required
+from models.item import ItemModel
 
 class Item(Resource):
 
@@ -16,25 +17,11 @@ class Item(Resource):
     def get(self, name):
         # item = next(filter(lambda i: i['name'] == name, items), 'None')
         # return {'message': item}, 200 if item is not None else 404
-        item = self.find_by_name(name)
+        item = ItemModel.find_by_name(name)
         if item:
-            return item
+            return item.json()
         
         return {"message": "item not found."}, 404
-
-    @classmethod
-    def find_by_name(cls, name):
-        connection = sqlite3.connect('my_app.db')
-        cursor = connection.cursor()
-
-        query = "SELECT * FROM items WHERE name = ?"
-        request = cursor.execute(query, (name,))
-
-        row = request.fetchone()
-        connection.close()
-
-        if row:
-            return {"item": {"name": row[0], "price": row[1]}}
 
     @jwt_required()
     def post(self, name):
@@ -45,38 +32,20 @@ class Item(Resource):
         #         return {'message': 'It already exists.'}, 400
         # if next(filter(lambda x: x['name'] == name, items), None) is not None:
         #     return {'message': "An item with name '{}' already exists.".format(name)}, 400
-        if self.find_by_name(name):
+        if ItemModel.find_by_name(name):
             return {'message': "An item with name '{}' already exists.".format(name)}, 400
 
         data = Item.parser.parse_args()
-        new_item = {'name': name, 'price': data['price']}
+        
+        new_item = ItemModel(name, data['price']) # {'name': name, 'price': data['price']}
+
         # items.append(new_item)
         try:
-            self.insert(new_item)
+            new_item.insert()
         except:
             return {"message": "An error occurred inserting the item."}, 500 # Internal server error
         
-        return new_item, 201
-
-    @classmethod
-    def insert(cls, item):
-        connection = sqlite3.connect("my_app.db")
-        cursor = connection.cursor()
-
-        query = "INSERT INTO items VALUES (?, ?)"
-        cursor.execute(query, (item['name'], item['price'], ))
-        connection.commit()
-        connection.close()
-
-    @classmethod
-    def update(cls, item):
-        connection = sqlite3.connect("my_app.db")
-        cursor = connection.cursor()
-
-        query = "UPDATE items SET price = ? WHERE name = ?"
-        cursor.execute(query, (item['price'], item['name'],))
-        connection.commit()
-        connection.close()
+        return new_item.json(), 201
 
     @jwt_required()
     def put(self, name):
@@ -94,23 +63,23 @@ class Item(Resource):
 
         data = Item.parser.parse_args()
         # item = next(filter(lambda x: x['name'] == name, items), None)
-        item = self.find_by_name(name)
-        updated_item = {'name': name, 'price': data['price']}
+        item = ItemModel.find_by_name(name)
+        updated_item = ItemModel(name, data['price']) #{'name': name, 'price': data['price']}
 
         if item is None:
             # item = {'name': name, 'price': data['price']}
             # items.append(item)
             try:
-                self.insert(updated_item)
+                updated_item.insert()
             except:
                 return {"message": "An error occurred inserting the itme."}, 500
         else:
             try:
-                self.update(updated_item)
+                updated_item.update()
             except:
                 return {"message": "An error occurred updating the itme."}, 500
 
-        return updated_item
+        return updated_item.json()
 
 
     @jwt_required()
