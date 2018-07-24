@@ -24,13 +24,15 @@ class UserRegister(Resource):
         if UserModel.find_by_username(data['username']):
             return {'message': 'A user with that username already exists.'}, 400
 
-        connection = sqlite3.connect('my_app.db')
-        cursor = connection.cursor()
-
-        query = "INSERT INTO users VALUES (NULL, ?, ?)" # "id" is auto increment, so set NULL.
-        cursor.execute(query, (data['username'], data['password']))
-
-        connection.commit()
-        connection.close()
+        user = UserModel(**data) # UserModel(data['username'], data['password'])
+        user.save_to_db()
+        # connection = sqlite3.connect('my_app.db')
+        # cursor = connection.cursor()
+        # 
+        # query = "INSERT INTO users VALUES (NULL, ?, ?)" # "id" is auto increment, so set NULL.
+        # cursor.execute(query, (data['username'], data['password']))
+        # 
+        # connection.commit()
+        # connection.close()
 
         return {'message': 'User created successfully.'}, 201

@@ -7,8 +7,14 @@ from resources.user import UserRegister
 from resources.item import Item, ItemList
 
 app = Flask(__name__)
-app.secret_key = 'jose'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///my_app.db'
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False # turn off auto tracking???
+app.secret_key = 'second_server'
 api = Api(app)
+
+@app.before_first_request
+def create_tables():
+    db.create_all()
 
 jwt = JWT(app, authenticate, identity) # endpoint is /auth
 
@@ -17,4 +23,6 @@ api.add_resource(ItemList, '/items')
 api.add_resource(UserRegister, '/register')
 
 if __name__ == '__main__': # if launch with python, this is the main!
+    from db import db
+    db.init_app(app)
     app.run(host='0.0.0.0', port=5000, debug=True)

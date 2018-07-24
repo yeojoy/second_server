@@ -41,7 +41,7 @@ class Item(Resource):
 
         # items.append(new_item)
         try:
-            new_item.insert()
+            new_item.save_to_db()
         except:
             return {"message": "An error occurred inserting the item."}, 500 # Internal server error
         
@@ -64,22 +64,26 @@ class Item(Resource):
         data = Item.parser.parse_args()
         # item = next(filter(lambda x: x['name'] == name, items), None)
         item = ItemModel.find_by_name(name)
-        updated_item = ItemModel(name, data['price']) #{'name': name, 'price': data['price']}
+        # updated_item = ItemModel(name, data['price']) #{'name': name, 'price': data['price']}
 
         if item is None:
             # item = {'name': name, 'price': data['price']}
             # items.append(item)
-            try:
-                updated_item.insert()
-            except:
-                return {"message": "An error occurred inserting the itme."}, 500
+            # try:
+            #     updated_item.save_to_db()
+            # except:
+            #     return {"message": "An error occurred inserting the itme."}, 500
+            item = ItemModel(name, data['price'])
         else:
-            try:
-                updated_item.update()
-            except:
-                return {"message": "An error occurred updating the itme."}, 500
+            # try:
+            #     updated_item.update()
+            # except:
+            #     return {"message": "An error occurred updating the itme."}, 500
+            item.price = data['price']
 
-        return updated_item.json()
+        item.save_to_db()
+
+        return item.json()
 
 
     @jwt_required()
@@ -94,30 +98,39 @@ class Item(Resource):
         # global items # python thinks items is local variable. so add "global" keyword
         # items = list(filter(lambda x: x['name'] != name, items))
 
-        connection = sqlite3.connect("my_app.db")
-        cursor = connection.cursor()
+        # connection = sqlite3.connect("my_app.db")
+        # cursor = connection.cursor()
+        # 
+        # query = "DELETE FROM items WHERE name = ?"
+        # cursor.execute(query, (name, ))
+        # 
+        # connection.commit()
+        # connection.close()
+        # 
+        # return {'message': 'Item deleted.'}
 
-        query = "DELETE FROM items WHERE name = ?"
-        cursor.execute(query, (name, ))
-        
-        connection.commit()
-        connection.close()
+        item = ItemModel.find_by_name(name)
+        if item:
+            item.delete_from_db()
+            return {'message': "{} deleted successfully.".format(name)}
 
-        return {'message': 'Item deleted.'}
+        return {'message': 'Item not found.'}, 400
 
 
 class ItemList(Resource):
     @jwt_required()
     def get(self):
-        connection = sqlite3.connect('my_app.db')
-        cursor = connection.cursor()
-
-        query = "SELECT * from items"
-        result = cursor.execute(query)
-        items = []
-        for row in result:
-            items.append({'name': row[0], 'price': row[1]})
-
-        connection.close()
-        
-        return {'items': items}, 200
+        # connection = sqlite3.connect('my_app.db')
+        # cursor = connection.cursor()
+        # 
+        # query = "SELECT * from items"
+        # result = cursor.execute(query)
+        # items = []
+        # for row in result:
+        #     items.append({'name': row[0], 'price': row[1]})
+        # 
+        # connection.close()
+        # 
+        # return {'items': items}, 200
+        # return {'items': [item.json() for item in ItemModel.query.all()] }
+        return {'items': list(map(lambda x: x.json(), ItemModel.query.all()))}
