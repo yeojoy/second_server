@@ -13,6 +13,12 @@ class Item(Resource):
         help = "This field cannot be left blank!"
     )
 
+    parser.add_argument('store_id',
+        type = int,
+        required = True,
+        help = "Every item needs a store's id."
+    )
+
     @jwt_required()
     def get(self, name):
         # item = next(filter(lambda i: i['name'] == name, items), 'None')
@@ -37,7 +43,7 @@ class Item(Resource):
 
         data = Item.parser.parse_args()
         
-        new_item = ItemModel(name, data['price']) # {'name': name, 'price': data['price']}
+        new_item = ItemModel(name, data['price'], data['store_id']) # {'name': name, 'price': data['price']}
 
         # items.append(new_item)
         try:
@@ -73,7 +79,8 @@ class Item(Resource):
             #     updated_item.save_to_db()
             # except:
             #     return {"message": "An error occurred inserting the itme."}, 500
-            item = ItemModel(name, data['price'])
+            # item = ItemModel(name, data['price'], data['store_id'])
+            item = ItemModel(name, **data)
         else:
             # try:
             #     updated_item.update()
